@@ -1,8 +1,8 @@
 # Manages configuration for cisco_ace
 #
-# January 2016
+# September 2018
 #
-# Copyright (c) 2016 Cisco and/or its affiliates.
+# Copyright (c) 2016-2018 Cisco and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -221,6 +221,10 @@ Puppet::Type.newtype(:cisco_ace) do
            'immediate|internet|network|priority|routine "#precedence' unless \
            /^([0-7]|critical|flash|flash-override|immediate|internet|network|priority|routine)$/.match(precedence)
     end
+  end
+
+  newproperty(:icmp_message) do
+    desc 'icmp message type'
   end
 
   newproperty(:dscp) do
