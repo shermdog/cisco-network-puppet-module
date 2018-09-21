@@ -1,4 +1,4 @@
-# August, 2018
+# September, 2018
 #
 # Copyright (c) 2014-2018 Cisco and/or its affiliates.
 #
@@ -27,6 +27,7 @@ Puppet::Type.type(:banner).provide(:cisco) do
   desc 'The Cisco provider for banner.'
 
   confine feature: :cisco_node_utils
+  confine operatingsystem: :nexus
   defaultfor operatingsystem: :nexus
 
   mk_resource_methods
@@ -100,3 +101,43 @@ Puppet::Type.type(:banner).provide(:cisco) do
     end
   end
 end # Puppet::Type
+
+require_relative '../../../puppet_x/cisco/check'
+unless PuppetX::Cisco::Check.use_old_netdev_type
+  require 'puppet/resource_api'
+  require 'puppet/resource_api/simple_provider'
+
+  require_relative('../../util/network_device/cisco_nexus/device')
+
+  # Implementation for the Banner type using the Resource API.
+  # We cannot use SimpleProvider here as the type is not ensurable
+  # Puppet will throw an error about 'Could not find a suitable provider' instead
+  # of the actual error 'Could not evaluate: SimpleProvider cannot be used with a Type that is not ensurable'
+  class Puppet::Provider::Banner::Cisco_nexus
+    def set(context, changes)
+      changes.each do |name, change|
+        context.updating(name) do
+          update(context, change[:should])
+        end
+      end
+    end
+
+    def get(context)
+      instances = []
+      for instance in Puppet::Type::Banner::ProviderCisco.instances
+        current_state = instance.instance_variable_get(:@property_hash)
+        current_state.delete(:ensure)
+        instances << current_state
+      end
+      instances
+    end
+
+    def update(context, should)
+      is = get(context).find { |key| key[:name] == should[:name] }
+      x = Puppet::Type::Banner::ProviderCisco.new(is)
+      x.instance_variable_set(:@resource, should)
+      x.instance_variable_set(:@property_flush, should)
+      x.flush
+    end
+  end
+end

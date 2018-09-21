@@ -27,6 +27,7 @@ Puppet::Type.type(:network_dns).provide(:cisco) do
   desc 'The Cisco provider for network_dns.'
 
   confine feature: :cisco_node_utils
+  confine operatingsystem: :nexus
   defaultfor operatingsystem: :nexus
 
   mk_resource_methods
@@ -127,5 +128,60 @@ Puppet::Type.type(:network_dns).provide(:cisco) do
 
   def flush
     validate
+  end
+end
+
+require_relative '../../../puppet_x/cisco/check'
+unless PuppetX::Cisco::Check.use_old_netdev_type
+  require 'puppet/resource_api'
+  require 'puppet/resource_api/simple_provider'
+
+  require_relative('../../util/network_device/cisco_nexus/device')
+
+  # Implementation for the network_dns type using the Resource API.
+  class Puppet::Provider::NetworkDns::Cisco_nexus < Puppet::ResourceApi::SimpleProvider
+    def get(context)
+      instances = []
+      for instance in Puppet::Type::Network_dns::ProviderCisco.instances
+        current_state = instance.instance_variable_get(:@property_hash)
+        current_state[:ensure] = current_state[:ensure].to_s
+        instances << current_state
+      end
+      instances
+    end
+
+    # def canonicalize(_context, resources)
+    #   resources.each do |r|
+    #     require 'pry'; binding.pry
+    #   end
+    # end
+
+    # def create(context, _id, should)
+    #   require 'pry'; binding.pry
+    # end
+
+    def update(context, _id, should)
+      # x = Puppet::Type::Network_dns::ProviderCisco.new(should)
+      # x.instance_variable_set(:@resource, should)
+      # x.validate
+      is = get(context).find { |key| key[:name] == should[:name] }
+      x = Puppet::Type::Network_dns::ProviderCisco.new(is)
+      x.instance_variable_set(:@resource, should)
+      x.validate
+      props = [:domain, :search, :servers]
+      # require 'pry'; binding.pry
+      for prop in props
+        unless should[prop].nil?
+          x.send("#{prop}=", should[prop]) if x.respond_to?("#{prop}=")
+        end
+      end
+      # require 'pry'; binding.pry
+    end
+
+    def delete(context, _id)
+      fail ArgumentError, 'This provider does not support ensure => absent'
+    end
+
+    alias create update
   end
 end

@@ -1,4 +1,4 @@
-# June, 2018
+# August, 2018
 #
 # Copyright (c) 2014-2018 Cisco and/or its affiliates.
 #
@@ -27,6 +27,7 @@ Puppet::Type.type(:syslog_server).provide(:cisco) do
   desc 'The Cisco provider for syslog_server.'
 
   confine feature: :cisco_node_utils
+  confine operatingsystem: :nexus
   defaultfor operatingsystem: :nexus
 
   mk_resource_methods
@@ -116,3 +117,54 @@ Puppet::Type.type(:syslog_server).provide(:cisco) do
     end
   end
 end # Puppet::Type
+
+require_relative '../../../puppet_x/cisco/check'
+unless PuppetX::Cisco::Check.use_old_netdev_type
+  require 'puppet/resource_api'
+  require 'puppet/resource_api/simple_provider'
+
+  require_relative('../../util/network_device/cisco_nexus/device')
+
+  # Implementation for the syslog_server type using the Resource API.
+  class Puppet::Provider::SyslogServer::Cisco_nexus < Puppet::ResourceApi::SimpleProvider
+    def get(context)
+      instances = []
+      for instance in Puppet::Type::Syslog_server::ProviderCisco.instances
+        current_state = instance.instance_variable_get(:@property_hash)
+        current_state[:ensure] = current_state[:ensure].to_s
+        current_state[:port] = current_state[:port].to_i if current_state[:port]
+        current_state[:severity_level] = current_state[:severity_level].to_i if current_state[:severity_level]
+        instances << current_state
+      end
+      instances
+    end
+
+    def canonicalize(_context, resources)
+      resources.each do |r|
+        r[:port] = r[:port].to_i if r[:port]
+        r[:severity_level] = r[:severity_level].to_i if r[:severity_level]
+      end
+    end
+
+    # def create(context, _id, should)
+    #   require 'pry'; binding.pry
+    # end
+
+    def update(context, _id, should)
+      is = get(context).find { |key| key[:name] == should[:name] }
+      x = Puppet::Type::Syslog_server::ProviderCisco.new(is)
+      x.instance_variable_set(:@resource, should)
+      x.flush
+    end
+
+    def delete(context, id)
+      is = get(context).find { |key| key[:name] == id }
+      x = Puppet::Type::Syslog_server::ProviderCisco.new(is)
+      x.instance_variable_set(:@resource, is)
+      x.instance_variable_set(:@property_flush, { :ensure => :absent })
+      x.flush
+    end
+
+    alias create update
+  end
+end

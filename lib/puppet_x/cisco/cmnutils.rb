@@ -1,6 +1,6 @@
 # PuppetX::Cisco - Common utility methods used by Cisco Types/Providers
 #
-# November 2015
+# September 2018
 #
 # Copyright (c) 2015-2018 Cisco and/or its affiliates.
 #
@@ -42,6 +42,17 @@ module PuppetX
       def self.bool_sym_to_s(val)
         return val unless val == :true || val == :false
         (val == :true)
+      end
+
+      # Convert string to boolean - basically copied stdlib str2bool
+      def self.str_to_bool(val)
+        return val unless val.is_a?(String)
+        case val
+        when /^$/, '' then false # Empty string will be false ...
+        when /^(1|t|y|true|yes)$/i  then true
+        when /^(0|f|n|false|no)$/i  then false
+        when /^(undef|undefined)$/ then false # This is not likely to happen ...
+        end
       end
 
       # Special handling for boolean properties.

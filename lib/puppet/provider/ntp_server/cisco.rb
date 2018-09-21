@@ -1,6 +1,6 @@
-# November, 2014
+# September, 2018
 #
-# Copyright (c) 2014-2017 Cisco and/or its affiliates.
+# Copyright (c) 2014-2018 Cisco and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ Puppet::Type.type(:ntp_server).provide(:cisco) do
   desc 'The Cisco provider for ntp_server.'
 
   confine feature: :cisco_node_utils
+  confine operatingsystem: :nexus
   defaultfor operatingsystem: :nexus
 
   mk_resource_methods
@@ -122,3 +123,62 @@ Puppet::Type.type(:ntp_server).provide(:cisco) do
     # puts_config
   end
 end # Puppet::Type
+
+require_relative '../../../puppet_x/cisco/check'
+unless PuppetX::Cisco::Check.use_old_netdev_type
+  require 'puppet/resource_api'
+  require 'puppet/resource_api/simple_provider'
+
+  require_relative('../../util/network_device/cisco_nexus/device')
+
+  begin
+    require 'puppet_x/cisco/cmnutils'
+  rescue LoadError # seen on master, not on agent
+    # See longstanding Puppet issues #4248, #7316, #14073, #14149, etc. Ugh.
+    require File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..',
+                                       'puppet_x', 'cisco', 'cmnutils.rb'))
+  end
+
+  # Implementation for the ntp_server type using the Resource API.
+  class Puppet::Provider::NtpServer::Cisco_nexus < Puppet::ResourceApi::SimpleProvider
+    def get(context)
+      instances = []
+      for instance in Puppet::Type::Ntp_server::ProviderCisco.instances
+        current_state = instance.instance_variable_get(:@property_hash)
+        current_state[:ensure] = current_state[:ensure].to_s
+        current_state[:key] = current_state[:key].to_i if current_state[:key]
+        current_state[:maxpoll] = current_state[:maxpoll].to_i if current_state[:maxpoll]
+        current_state[:minpoll] = current_state[:minpoll].to_i if current_state[:minpoll]
+        current_state[:prefer] = PuppetX::Cisco::Utils.str_to_bool(current_state[:prefer]) if current_state[:prefer]
+        instances << current_state
+      end
+      instances
+    end
+
+    def canonicalize(_context, resources)
+      resources.each do |r|
+        r[:key] = r[:key].to_i if r[:key]
+        r[:maxpoll] = r[:maxpoll].to_i if r[:maxpoll]
+        r[:minpoll] = r[:minpoll].to_i if r[:minpoll]
+        r[:prefer] = PuppetX::Cisco::Utils.str_to_bool(r[:prefer]) if r[:prefer]
+      end
+    end
+
+    def update(context, _id, should)
+      is = get(context).find { |key| key[:name] == should[:name] }
+      x = Puppet::Type::Ntp_server::ProviderCisco.new(is)
+      x.instance_variable_set(:@resource, should)
+      x.flush
+    end
+
+    def delete(context, id)
+      is = get(context).find { |key| key[:name] == id }
+      x = Puppet::Type::Ntp_server::ProviderCisco.new(is)
+      x.instance_variable_set(:@resource, is)
+      x.instance_variable_set(:@property_flush, { :ensure => :absent })
+      x.flush
+    end
+
+    alias create update
+  end
+end
