@@ -140,7 +140,7 @@ unless PuppetX::Cisco::Check.use_old_netdev_type
   end
 
   # Implementation for the ntp_server type using the Resource API.
-  class Puppet::Provider::NtpServer::Cisco_nexus < Puppet::ResourceApi::SimpleProvider
+  class Puppet::Provider::NtpServer::CiscoNexus < Puppet::ResourceApi::SimpleProvider
     def get(context)
       instances = []
       for instance in Puppet::Type::Ntp_server::ProviderCisco.instances

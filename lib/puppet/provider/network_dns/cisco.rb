@@ -139,7 +139,7 @@ unless PuppetX::Cisco::Check.use_old_netdev_type
   require_relative('../../util/network_device/cisco_nexus/device')
 
   # Implementation for the network_dns type using the Resource API.
-  class Puppet::Provider::NetworkDns::Cisco_nexus < Puppet::ResourceApi::SimpleProvider
+  class Puppet::Provider::NetworkDns::CiscoNexus < Puppet::ResourceApi::SimpleProvider
     def get(context)
       instances = []
       for instance in Puppet::Type::Network_dns::ProviderCisco.instances

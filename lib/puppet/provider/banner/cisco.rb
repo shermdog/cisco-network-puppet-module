@@ -113,7 +113,7 @@ unless PuppetX::Cisco::Check.use_old_netdev_type
   # We cannot use SimpleProvider here as the type is not ensurable
   # Puppet will throw an error about 'Could not find a suitable provider' instead
   # of the actual error 'Could not evaluate: SimpleProvider cannot be used with a Type that is not ensurable'
-  class Puppet::Provider::Banner::Cisco_nexus
+  class Puppet::Provider::Banner::CiscoNexus
     def set(context, changes)
       changes.each do |name, change|
         context.updating(name) do

@@ -126,7 +126,7 @@ unless PuppetX::Cisco::Check.use_old_netdev_type
   require_relative('../../util/network_device/cisco_nexus/device')
 
   # Implementation for the syslog_server type using the Resource API.
-  class Puppet::Provider::SyslogServer::Cisco_nexus < Puppet::ResourceApi::SimpleProvider
+  class Puppet::Provider::SyslogServer::CiscoNexus < Puppet::ResourceApi::SimpleProvider
     def get(context)
       instances = []
       for instance in Puppet::Type::Syslog_server::ProviderCisco.instances
