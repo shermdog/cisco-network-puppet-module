@@ -49,6 +49,10 @@ module Puppet::Transport
       facts
     end
 
+    def op_command(cmd)
+      Cisco::Node.instance.client.get(command: cmd)
+    end
+
     def verify(_context)
       # This is a stub method
     end

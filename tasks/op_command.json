@@ -1,0 +1,22 @@
+{
+  "puppet_task_version": 1,
+  "supports_noop": false,
+  "remote": true,
+  "description": "Execute arbitrary commands in Operational mode.",
+  "parameters": {
+    "command": {
+      "description": "The operational command to execute.",
+      "type": "String"
+    },
+    "raw": {
+      "description": "Whether to print the raw output or wrap it into result set",
+      "type": "Optional[Boolean]"
+    }
+  },
+  "files": [
+    "ciscopuppet/lib/puppet/util/task_helper.rb",
+    "ciscopuppet/lib/puppet/transport/cisco_nexus.rb",
+    "ciscopuppet/lib/puppet/transport/schema/cisco_nexus.rb",
+    "ciscopuppet/lib/puppet_x/cisco_nexus/transport_shim.rb"
+  ]
+}
